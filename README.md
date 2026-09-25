@@ -1,6 +1,6 @@
 # Braintrust project cost dashboard
 
-A lightweight React dashboard that compares estimated LLM spend and token consumption across every project accessible to a Braintrust service token in an organization. It includes project filtering, project/model comparison modes, an overlaid daily time-series plot, custom date ranges, summary cards, and CSV export.
+A lightweight React dashboard that compares estimated LLM spend and token consumption across every project accessible to a Braintrust service token in an organization. It includes project filtering, project, model, and project × model comparison modes, an overlaid daily time-series plot, custom date ranges, summary cards, and CSV export.
 
 ## Run it
 

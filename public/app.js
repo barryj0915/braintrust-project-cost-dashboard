@@ -62,6 +62,22 @@ function aggregateModels(projects) {
   }));
 }
 
+function projectModelPairs(projects) {
+  return projects.flatMap((project) => project.models.map((model) => ({
+    ...model,
+    id: `${project.id}:${model.name}`,
+    name: `${project.name} · ${model.name}`,
+    projectName: project.name,
+    modelName: model.name,
+  })));
+}
+
+function comparisonLabel(groupBy) {
+  if (groupBy === "model") return "model";
+  if (groupBy === "projectModel") return "project × model";
+  return "project";
+}
+
 function LineChart({ projects, metric }) {
   const width = 920;
   const height = 350;
@@ -100,14 +116,18 @@ function Dashboard({ data }) {
   const [groupBy, setGroupBy] = useState("project");
   const [selected, setSelected] = useState(data.projects.map((project) => project.id));
   const visible = useMemo(() => data.projects.filter((project) => selected.includes(project.id)), [data, selected]);
-  const comparison = useMemo(() => groupBy === "project" ? visible : aggregateModels(visible), [visible, groupBy]);
+  const comparison = useMemo(() => {
+    if (groupBy === "model") return aggregateModels(visible);
+    if (groupBy === "projectModel") return projectModelPairs(visible);
+    return visible;
+  }, [visible, groupBy]);
   const sorted = useMemo(() => [...comparison].sort((a, b) => valueFor(b, metric) - valueFor(a, metric)), [comparison, metric]);
   const total = visible.reduce((sum, project) => sum + valueFor(project, metric), 0);
   const totalSpans = visible.reduce((sum, project) => sum + project.llmSpans, 0);
   const highest = sorted[0];
 
   function downloadCsv() {
-    const label = groupBy === "project" ? "Project" : "Model";
+    const label = groupBy === "project" ? "Project" : groupBy === "model" ? "Model" : "Project / Model";
     const rows = [[label, "Estimated cost", "Tokens", "LLM spans"], ...sorted.map((item) => [item.name, item.cost, item.tokens, item.llmSpans])];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
     const link = document.createElement("a");
@@ -117,10 +137,10 @@ function Dashboard({ data }) {
     URL.revokeObjectURL(link.href);
   }
 
-  return html`<section className="dashboard"><div className="toolbar"><div className="toolbar-toggles"><div className="metric-toggle" aria-label="Metric"><button className=${metric === "cost" ? "active" : ""} onClick=${() => setMetric("cost")}>Estimated spend</button><button className=${metric === "tokens" ? "active" : ""} onClick=${() => setMetric("tokens")}>Tokens consumed</button></div><div className="metric-toggle" aria-label="Compare by"><button className=${groupBy === "project" ? "active" : ""} onClick=${() => setGroupBy("project")}>By project</button><button className=${groupBy === "model" ? "active" : ""} onClick=${() => setGroupBy("model")}>By model</button></div></div><${ProjectPicker} projects=${data.projects} selected=${selected} setSelected=${setSelected} /></div>
+  return html`<section className="dashboard"><div className="toolbar"><div className="toolbar-toggles"><div className="metric-toggle" aria-label="Metric"><button className=${metric === "cost" ? "active" : ""} onClick=${() => setMetric("cost")}>Estimated spend</button><button className=${metric === "tokens" ? "active" : ""} onClick=${() => setMetric("tokens")}>Tokens consumed</button></div><div className="metric-toggle" aria-label="Compare by"><button className=${groupBy === "project" ? "active" : ""} onClick=${() => setGroupBy("project")}>By project</button><button className=${groupBy === "model" ? "active" : ""} onClick=${() => setGroupBy("model")}>By model</button><button className=${groupBy === "projectModel" ? "active" : ""} onClick=${() => setGroupBy("projectModel")}>Project × model</button></div></div><${ProjectPicker} projects=${data.projects} selected=${selected} setSelected=${setSelected} /></div>
     <div className="summary-grid"><article className="stat stat-primary"><span>${metric === "cost" ? "Total estimated spend" : "Total tokens"}</span><strong>${formatValue(total, metric)}</strong><small>${data.startDate} – ${data.endDate}</small></article><article className="stat"><span>Projects selected</span><strong>${visible.length}</strong><small>of ${data.projects.length} projects</small></article><article className="stat"><span>LLM spans</span><strong>${integer.format(totalSpans)}</strong><small>Across selected projects</small></article><article className="stat"><span>Highest usage</span><strong>${formatValue(highest ? valueFor(highest, metric) : 0, metric)}</strong><small>${highest?.name ?? "No project selected"}</small></article></div>
-    <article className="panel timeline-panel"><div className="panel-heading"><div><span className="kicker">Daily trend</span><h2>${metric === "cost" ? "Spend" : "Tokens"} per ${groupBy}</h2></div><span className="muted">${comparison.length} lines overlaid</span></div><${LineChart} projects=${comparison} metric=${metric} /><div className="legend">${comparison.map((item, index) => html`<span key=${item.id}><i style=${{ background: colors[index % colors.length] }}></i>${item.name}</span>`)}</div></article>
-    <article className="panel table-panel"><div className="panel-heading"><div><span className="kicker">Comparison</span><h2>${groupBy === "project" ? "Project" : "Model"} breakdown</h2></div><button className="secondary compact" type="button" onClick=${downloadCsv}>Download CSV</button></div><div className="table-scroll"><table><thead><tr><th>${groupBy === "project" ? "Project" : "Model"}</th><th>Estimated spend</th><th>Tokens</th><th>LLM spans</th><th>Avg. spend / span</th></tr></thead><tbody>${sorted.map((item) => html`<tr key=${item.id}><td>${item.name}</td><td>${usd.format(item.cost)}</td><td>${integer.format(item.tokens)}</td><td>${integer.format(item.llmSpans)}</td><td>${usd.format(item.llmSpans ? item.cost / item.llmSpans : 0)}</td></tr>`)}</tbody></table></div></article>
+    <article className="panel timeline-panel"><div className="panel-heading"><div><span className="kicker">Daily trend</span><h2>${metric === "cost" ? "Spend" : "Tokens"} per ${comparisonLabel(groupBy)}</h2></div><span className="muted">${comparison.length} lines overlaid</span></div><${LineChart} projects=${comparison} metric=${metric} /><div className="legend">${comparison.map((item, index) => html`<span key=${item.id}><i style=${{ background: colors[index % colors.length] }}></i>${item.name}</span>`)}</div></article>
+    <article className="panel table-panel"><div className="panel-heading"><div><span className="kicker">Comparison</span><h2>${comparisonLabel(groupBy)[0].toUpperCase() + comparisonLabel(groupBy).slice(1)} breakdown</h2></div><button className="secondary compact" type="button" onClick=${downloadCsv}>Download CSV</button></div><div className="table-scroll"><table><thead><tr><th>${groupBy === "project" ? "Project" : groupBy === "model" ? "Model" : "Project / model"}</th><th>Estimated spend</th><th>Tokens</th><th>LLM spans</th><th>Avg. spend / span</th></tr></thead><tbody>${groupBy === "projectModel" ? visible.flatMap((project) => [html`<tr className="project-group" key=${project.id}><td>${project.name}</td><td>${usd.format(project.cost)}</td><td>${integer.format(project.tokens)}</td><td>${integer.format(project.llmSpans)}</td><td>${usd.format(project.llmSpans ? project.cost / project.llmSpans : 0)}</td></tr>`, ...[...project.models].sort((left, right) => valueFor(right, metric) - valueFor(left, metric)).map((model) => html`<tr className="model-child" key=${`${project.id}:${model.name}`}><td>${model.name}</td><td>${usd.format(model.cost)}</td><td>${integer.format(model.tokens)}</td><td>${integer.format(model.llmSpans)}</td><td>${usd.format(model.llmSpans ? model.cost / model.llmSpans : 0)}</td></tr>`)]) : sorted.map((item) => html`<tr key=${item.id}><td>${item.name}</td><td>${usd.format(item.cost)}</td><td>${integer.format(item.tokens)}</td><td>${integer.format(item.llmSpans)}</td><td>${usd.format(item.llmSpans ? item.cost / item.llmSpans : 0)}</td></tr>`)}</tbody></table></div></article>
   </section>`;
 }
 

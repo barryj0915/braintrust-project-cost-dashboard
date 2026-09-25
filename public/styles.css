@@ -75,6 +75,9 @@ td { padding:13px 12px; border-bottom:1px solid var(--line); text-align:right; f
 td:first-child { font-weight:550; }
 tbody tr:hover { background:#fafafa; }
 tbody tr:last-child td { border-bottom:0; }
+.project-group td { background:#f4f4f5; font-weight:650; border-top:1px solid var(--line-strong); }
+.model-child td:first-child { position:relative; padding-left:32px; color:#3f3f46; font-weight:400; }
+.model-child td:first-child::before { content:"↳"; position:absolute; left:14px; color:var(--subtle); }
 footer { margin-top:40px; padding:24px; color:var(--subtle); border-top:1px solid var(--line); text-align:center; font-size:11px; }
 @media(max-width:850px) { main{width:min(100% - 28px,1280px)} .hero{grid-template-columns:1fr;gap:28px;padding-top:36px} .summary-grid{grid-template-columns:1fr 1fr} }
 @media(max-width:560px) { h1{font-size:56px} .date-grid,.summary-grid{grid-template-columns:1fr} .toolbar{align-items:stretch;flex-direction:column} .toolbar-toggles{display:grid;grid-template-columns:1fr} .metric-toggle{display:grid;grid-template-columns:1fr 1fr} .picker>.secondary{width:100%;justify-content:space-between} .picker-menu{left:0;right:auto;width:100%} .panel{padding:18px} }
