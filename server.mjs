@@ -257,7 +257,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       return;
     }
     response.writeHead(405).end("Method not allowed");
-  }).listen(port, "127.0.0.1", () => {
+  }).listen(port, "0.0.0.0", () => {
     process.stdout.write(`Project cost dashboard: http://localhost:${port}\n`);
   });
 }
