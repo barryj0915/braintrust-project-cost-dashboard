@@ -3,7 +3,7 @@ import { createRoot } from "https://esm.sh/react-dom@19.2.0/client";
 import htm from "https://esm.sh/htm@3.1.1";
 
 const html = htm.bind(React.createElement);
-const colors = ["#7656ff", "#ef6548", "#168b78", "#db9f11", "#ca4d96", "#3e76d5", "#7b8f26", "#8e5a3d"];
+const colors = ["#2c1fea", "#0fa0aa", "#d326d3", "#ea580c", "#009966", "#8537eb", "#5770ff", "#dc264d"];
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 4 });
 const integer = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
